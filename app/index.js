@@ -10,7 +10,8 @@ const http = require('http'),
     url = require('url'),
     StringDecoder = require('string_decoder').StringDecoder,
     config = require('./config'),
-    fs = require('fs');
+    fs = require('fs'),
+    _data = require('./lib/data');
 
 //Instantiate the HTTP server
 var httpServer = http.createServer(function (req, res) {
