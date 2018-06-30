@@ -5,7 +5,8 @@
 
 //Dependencies
 const fs = require('fs');
-const path = reqire('path');
+const path = require('path');
+const helpers = require('./helpers');
 
 //Container for the module to be exported
 var lib = {};
@@ -16,7 +17,7 @@ lib.baseDir = path.join(__dirname, '../.data/');
 //Write data to file
 lib.create = function (dir, file, data, callback) {
     //Open the file for writitng
-    fs.open(lib.baseDir + dir + '/' + file + '.json', 'wx', function (err, fileDescriptor) {
+    fs.open(lib.baseDir + dir + '/' + file + '.json', 'wx+', function (err, fileDescriptor) {
         if (!err && fileDescriptor) {
             //Convert data to string
             var stringData = JSON.stringify(data);
@@ -34,7 +35,7 @@ lib.create = function (dir, file, data, callback) {
                 }
             });
         } else {
-            callback('Could not create new file, it may already exist');
+            callback('Could not create new file, it may already exist' + err.message);
         }
     });
 }
@@ -42,7 +43,12 @@ lib.create = function (dir, file, data, callback) {
 //Read data from file
 lib.read = function (dir, file, callback) {
     fs.readFile(lib.baseDir + dir + '/' + file + '.json', 'utf8', function (err, data) {
-        callback(err, data);
+        if (!err && data) {
+            var parsedData = helpers.parsedJsonToObject(data);
+            callback(false, parsedData);
+        } else {
+            callback(err, data);
+        }
     });
 }
 
@@ -86,7 +92,7 @@ lib.update = function (dir, file, data, callback) {
 //Delete a file
 lib.delete = function (dir, file, callback) {
     //unlink the file
-    fs.unlink(lib.baseDir + dir + '/' + file + '.json', 'r+', function (err) {
+    fs.unlink(lib.baseDir + dir + '/' + file + '.json', function (err) {
         if (!err) {
             callback(false);
         } else {
