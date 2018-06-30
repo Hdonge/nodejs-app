@@ -201,22 +201,21 @@ handlers._users.delete = function (data, callback) {
     }
 };
 
-
 //Users
-handlers.tokens = function (data, callback) {
+handlers.users = function (data, callback) {
     var acceptableMethods = ['post', 'put', 'get', 'delete'];
     if (acceptableMethods.indexOf(data.method) > -1) {
-        handlers._tokens[data.method](data, callback);
+        handlers._users[data.method](data, callback);
     } else {
         callback(405);
     }
 };
 
 //Tokens
-handlers.users = function (data, callback) {
+handlers.tokens = function (data, callback) {
     var acceptableMethods = ['post', 'put', 'get', 'delete'];
     if (acceptableMethods.indexOf(data.method) > -1) {
-        handlers._users[data.method](data, callback);
+        handlers._tokens[data.method](data, callback);
     } else {
         callback(405);
     }
@@ -368,6 +367,9 @@ handlers._tokens.verifyToken = function (id, phone, callback) {
         }
     });
 };
+
+
+
 
 //Not found handler
 handlers.notFound = function (data, callback) {
