@@ -5,7 +5,7 @@
 //Dependecies
 const _data = require('./data'),
     helpers = require('./helpers'),
-    config = require('../config');
+    config = require('./config');
 
 //define the handlers
 var handlers = {};
