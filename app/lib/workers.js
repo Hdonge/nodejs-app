@@ -11,6 +11,7 @@ const path = require('path'),
     http = require('http'),
     https = require('https'),
     helpers = require('./helpers'),
+    _logs = require('./logs'),
     url = require('url');
 
 
@@ -41,6 +42,9 @@ workers.gatherAllChecks = function () {
 
 //Sanity-check the check data
 workers.validateCheckData = function (originalCheckData) {
+
+    workers.log(originalCheckData, '', '', '', '');
+
     originalCheckData = typeof (originalCheckData) == 'object' && originalCheckData !== null ? originalCheckData : {};
     originalCheckData.id = typeof (originalCheckData.id) == 'string' && originalCheckData.id.trim().length == 20 ? originalCheckData.id.trim() : false;
     originalCheckData.userPhone = typeof (originalCheckData.userPhone) == 'string' && originalCheckData.userPhone.trim().length == 10 ? originalCheckData.userPhone.trim() : false;
@@ -150,14 +154,16 @@ workers.processCheckOutcome = function (originalCheckData, checkOutcome) {
 
     //Decide if alert is warranted
     var alertWarranted = originalCheckData.lastChecked && originalCheckData.state !== state ? true : false;
+    //Log the outcome
+    var timeOfCheck = Date.now();
+    workers.log(originalCheckData, checkOutcome, state, alertWarranted, timeOfCheck);
 
     //Update the check data
     var newCheckData = originalCheckData;
     newCheckData.state = state;
-    newCheckData.lastChecked = Date.now();
+    newCheckData.lastChecked = timeOfCheck;
 
     //Save the updates
-
     _data.update('checks', newCheckData.id, newCheckData, function (err) {
         if (!err) {
             //Send the check data to next step in the process if neeeded
@@ -185,11 +191,74 @@ workers.alertUserToStatusChange = function (newCheckData) {
     });
 };
 
+workers.log = function (originalCheckData, checkOutcome, state, alertWarranted, timeOfCheck) {
+    //Form the log data
+    var logData = {
+        'check': originalCheckData,
+        'outcome': checkOutcome,
+        'state': state,
+        'alert': alert,
+        'time': timeOfCheck
+    };
+
+    //Convert data to a string 
+    var logString = JSON.stringify(logData);
+
+    //Determine the name of the log file
+
+    var logFileName = originalCheckData.id;
+
+    //Appned the log string to the file
+    _logs.append(logFileName, logString, function (err) {
+        if (!err) {
+            console.log('File logging succeeded');
+        } else {
+            console.log('Error logging file', err);
+        }
+    });
+};
 //Timer to execute worker process once per minute
 workers.loop = function () {
     setInterval(function () {
         workers.gatherAllChecks();
     }, 1000 * 5);
+};
+
+//Rotate (compress) the logs file
+workers.rotateLogs = function () {
+    //List all the (non compressed) log files
+    _logs.list(false, function (err, logs) {
+        if (!err && logs && logs.length > 0) {
+            logs.forEach(function (logName) {
+                //Compress the data to a different file
+                var logId = logName.replace('.log', '');
+                var newFileId = logId + '-' + Date.now();
+                _logs.compress(logId, newFileId, function (err) {
+                    if (!err) {
+                        //Truncate the log
+                        _logs.truncate(logId, function (err) {
+                            if (!err) {
+                                console.log("Success truncating logFile");
+                            } else {
+                                console.log("Error truncating log file");
+                            }
+                        });
+                    } else {
+                        console.log("Error compressing one of the log files", err);
+                    }
+                });
+            });
+        } else {
+            console.log("Error : Could not find any logs to rotate");
+        }
+    });
+};
+
+//Timer to execute the log rotation process once per day
+workers.logRotationLoop = function () {
+    setInterval(function () {
+        workers.rotateLogs();
+    }, 1000 * 60 * 60 * 24);
 };
 
 //Init script
@@ -198,6 +267,12 @@ workers.init = function () {
     workers.gatherAllChecks();
     //call the loop so the checks will execute later on
     workers.loop();
+
+    //Compress all the logs immediately
+    workers.rotateLogs();
+
+    //Call the compression loop so the logs would be compressed later on 
+    workers.logRotationLoop();
 
 };
 //Export the module
