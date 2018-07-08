@@ -6,7 +6,9 @@
 const crypto = require('crypto'),
     config = require('./config'),
     queryString = require('querystring'),
-    https = require('https');
+    https = require('https'),
+    path = require('path'),
+    fs = require('fs');
 
 
 
@@ -110,6 +112,23 @@ helpers.sendTwilioSms = function (phone, msg, callback) {
 
     } else {
         callback('Given parameters are missing or invalid');
+    }
+};
+
+//Get the string content of a template
+helpers.getTemplate = function (templateName, callback) {
+    templateName = typeof (templateName) == 'string' && templateName.length > 0 ? templateName : false;
+    if (templateName) {
+        var templatesDir = path.join(__dirname, '/../templates/');
+        fs.readFile(templatesDir + templateName + '.html', 'utf8', function (err, str) {
+            if (!err && str && str.length) {
+                callback(false, str);
+            } else {
+                callback('Not template could be found');
+            }
+        });
+    } else {
+        callback('A valid template name was not specified');
     }
 };
 
