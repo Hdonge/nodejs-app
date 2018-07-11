@@ -15,7 +15,7 @@ const http = require('http'),
     helpers = require('./helpers'),
     path = require('path'),
     util = require('util'),
-    debug = util.debuglog('workers');
+    debug = util.debuglog('server');
 
 //Instantiate the server module object
 var server = {};
@@ -84,18 +84,11 @@ server.unifiedServer = function (req, res) {
 
         //Route the request specified in the router
         chosenHandler(data, function (statusCode, payload, contentType) {
-
             // Determine the type of response (fallback to JSON)
             contentType = typeof (contentType) == 'string' ? contentType : 'json';
 
             //Use the status code called back by the handler, or default to 200
             statusCode = typeof (statusCode) === 'number' ? statusCode : 200;
-
-            //Use the payload called back by the handler , or default to an empty object
-            payload = typeof (payload) === 'object' ? payload : {};
-
-            //Convert payload to string
-            var payloadString = JSON.stringify(payload);
 
             // Return the response parts that are content-type specific
             var payloadString = '';
