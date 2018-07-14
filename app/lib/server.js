@@ -160,9 +160,9 @@ server.router = {
     'checks/create': handlers.checksCreate,
     'checks/edit': handlers.checksEdit,
     'ping': handlers.ping,
-    'users': handlers.users,
-    'tokens': handlers.tokens,
-    'checks': handlers.checks,
+    'api/users': handlers.users,
+    'api/tokens': handlers.tokens,
+    'api/checks': handlers.checks,
     'public': handlers.public,
     'favicon.ico': handlers.favicon
 };
