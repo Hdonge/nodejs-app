@@ -73,6 +73,9 @@ server.unifiedServer = function (req, res) {
         //Choose the handler this request should go to. If one is not found the should go notfound handler.
         var chosenHandler = typeof (server.router[trimmedPath]) !== 'undefined' ? server.router[trimmedPath] : handlers.notFound;
 
+        //If the request is in the public directory then use public handler instead
+        chosenHandler = trimmedPath.indexOf('public/') > -1 ? handlers.public : chosenHandler;
+
         //Construct the data object to send to the handler
         var data = {
             'trimmedPath': trimmedPath,
@@ -101,6 +104,31 @@ server.unifiedServer = function (req, res) {
             if (contentType == 'html') {
                 res.setHeader('Content-Type', 'text/html');
                 payloadString = typeof (payload) == 'string' ? payload : '';
+            }
+
+            if (contentType == 'favicon') {
+                res.setHeader('Content-Type', 'image/x-icon');
+                payloadString = typeof (payload) !== 'undefined' ? payload : '';
+            }
+
+            if (contentType == 'plain') {
+                res.setHeader('Content-Type', 'text/plain');
+                payloadString = typeof (payload) !== 'undefined' ? payload : '';
+            }
+
+            if (contentType == 'css') {
+                res.setHeader('Content-Type', 'text/css');
+                payloadString = typeof (payload) !== 'undefined' ? payload : '';
+            }
+
+            if (contentType == 'png') {
+                res.setHeader('Content-Type', 'image/png');
+                payloadString = typeof (payload) !== 'undefined' ? payload : '';
+            }
+
+            if (contentType == 'jpg') {
+                res.setHeader('Content-Type', 'image/jpeg');
+                payloadString = typeof (payload) !== 'undefined' ? payload : '';
             }
 
             res.writeHead(statusCode);
@@ -134,7 +162,9 @@ server.router = {
     'ping': handlers.ping,
     'users': handlers.users,
     'tokens': handlers.tokens,
-    'checks': handlers.checks
+    'checks': handlers.checks,
+    'public': handlers.public,
+    'favicon.ico': handlers.favicon
 };
 
 
