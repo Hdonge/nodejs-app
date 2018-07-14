@@ -155,7 +155,7 @@ server.router = {
     'account/edit': handlers.accountEdit,
     'account/delete': handlers.accountDelete,
     'session/create': handlers.sessionCreate,
-    'session/delete': handlers.sessionDelete,
+    'session/deleted': handlers.sessionDeleted,
     'checks/all': handlers.checksList,
     'checks/create': handlers.checksCreate,
     'checks/edit': handlers.checksEdit,

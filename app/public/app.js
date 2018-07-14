@@ -16,7 +16,7 @@ app.config = {
 app.client = {};
 
 //Interface for making API calls 
-app.client.request = function (headers, path, method, queryStringObjet, payload, callback) {
+app.client.request = function (headers, path, method, queryStringObject, payload, callback) {
     // Set defaults
     headers = typeof (headers) == 'object' && headers !== null ? headers : {};
     path = typeof (path) == 'string' ? path : '/';
@@ -39,7 +39,6 @@ app.client.request = function (headers, path, method, queryStringObjet, payload,
             requestUrl += queryKey + '=' + queryStringObject[queryKey];
         }
     }
-
     // Form the http request as a JSON type
     var xhr = new XMLHttpRequest();
     xhr.open(method, requestUrl, true);
@@ -75,6 +74,40 @@ app.client.request = function (headers, path, method, queryStringObjet, payload,
     // Send the payload as JSON
     var payloadString = JSON.stringify(payload);
     xhr.send(payloadString);
+};
+
+// Bind the logout button
+app.bindLogoutButton = function () {
+    console.log("Hello");
+    document.getElementById("logoutButton").addEventListener("click", function (e) {
+
+        // Stop it from redirecting anywhere
+        e.preventDefault();
+
+        // Log the user out
+        app.logUserOut();
+
+    });
+};
+
+// Log the user out then redirect them
+app.logUserOut = function () {
+    console.log("Hey", app.config);
+    // Get the current token id
+    var tokenId = typeof (app.config.sessionToken.id) == 'string' ? app.config.sessionToken.id : false;
+
+    // Send the current token to the tokens endpoint to delete it
+    var queryStringObject = {
+        'id': tokenId
+    };
+    app.client.request(undefined, 'api/tokens', 'DELETE', queryStringObject, undefined, function (statusCode, responsePayload) {
+        // Set the app.config token as false
+        // app.setSessionToken(false);
+        console.log("How you doing", responsePayload);
+        // Send the user to the logged out page
+        //window.location = '/session/deleted';
+
+    });
 };
 
 // Bind the forms
@@ -247,11 +280,19 @@ app.tokenRenewalLoop = function () {
     }, 1000 * 60);
 };
 
-
 // Init (bootstrapping)
 app.init = function () {
     // Bind all form submissions
     app.bindForms();
+
+    // Bind logout logout button
+    app.bindLogoutButton();
+
+    // Get the token from localstorage
+    app.getSessionToken();
+
+    // Renew token
+    app.tokenRenewalLoop();
 };
 
 // Call the init processes after the window loads
