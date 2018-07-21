@@ -39,6 +39,7 @@ app.client.request = function (headers, path, method, queryStringObject, payload
             requestUrl += queryKey + '=' + queryStringObject[queryKey];
         }
     }
+    console.log(requestUrl);
     // Form the http request as a JSON type
     var xhr = new XMLHttpRequest();
     xhr.open(method, requestUrl, true);
@@ -78,7 +79,6 @@ app.client.request = function (headers, path, method, queryStringObject, payload
 
 // Bind the logout button
 app.bindLogoutButton = function () {
-    console.log("Hello");
     document.getElementById("logoutButton").addEventListener("click", function (e) {
 
         // Stop it from redirecting anywhere
@@ -92,7 +92,6 @@ app.bindLogoutButton = function () {
 
 // Log the user out then redirect them
 app.logUserOut = function () {
-    console.log("Hey", app.config);
     // Get the current token id
     var tokenId = typeof (app.config.sessionToken.id) == 'string' ? app.config.sessionToken.id : false;
 
@@ -102,10 +101,9 @@ app.logUserOut = function () {
     };
     app.client.request(undefined, 'api/tokens', 'DELETE', queryStringObject, undefined, function (statusCode, responsePayload) {
         // Set the app.config token as false
-        // app.setSessionToken(false);
-        console.log("How you doing", responsePayload);
+        app.setSessionToken(false);
         // Send the user to the logged out page
-        //window.location = '/session/deleted';
+        window.location = '/session/deleted';
 
     });
 };
@@ -190,6 +188,18 @@ app.formResponseProcessor = function (formId, requestPayload, responsePayload) {
     if (formId == 'sessionCreate') {
         app.setSessionToken(responsePayload);
         window.location = '/checks/all';
+    }
+
+    // If forms saved successfully and they have success messages, show them
+    var formsWithSuccessMessages = ['accountEdit1', 'accountEdit2'];
+    if (formsWithSuccessMessages.indexOf(formId) > -1) {
+        document.querySelector("#" + formId + " .formSuccess").style.display = 'block';
+    }
+
+    // If the user just deleted their account, redirect them to the account-delete page
+    if (formId == 'accountEdit3') {
+        app.logUserOut(false);
+        window.location = '/account/deleted';
     }
 };
 
@@ -280,6 +290,50 @@ app.tokenRenewalLoop = function () {
     }, 1000 * 60);
 };
 
+// Load data on the page
+app.loadDataOnPage = function () {
+    // Get the current page from the body class
+    var bodyClasses = document.querySelector("body").classList;
+    var primaryClass = typeof (bodyClasses[0]) == 'string' ? bodyClasses[0] : false;
+
+    // Logic for account settings page
+    if (primaryClass == 'accountEdit') {
+        app.loadAccountEditPage();
+    }
+};
+
+// Load the account edit page specifically
+app.loadAccountEditPage = function () {
+    // Get the phone number from the current token, or log the user out if none is there
+    var phone = typeof (app.config.sessionToken.phone) == 'string' ? app.config.sessionToken.phone : false;
+    if (phone) {
+        // Fetch the user data
+        var queryStringObject = {
+            'phone': phone
+        };
+        app.client.request(undefined, 'api/users', 'GET', queryStringObject, undefined, function (statusCode, responsePayload) {
+            if (statusCode == 200) {
+                // Put the data into the forms as values where needed
+                document.querySelector("#accountEdit1 .firstNameInput").value = responsePayload.firstName;
+                document.querySelector("#accountEdit1 .lastNameInput").value = responsePayload.lastName;
+                document.querySelector("#accountEdit1 .displayPhoneInput").value = responsePayload.phone;
+
+                // Put the hidden phone field into both forms
+                var hiddenPhoneInputs = document.querySelectorAll("input.hiddenPhoneNumberInput");
+                for (var i = 0; i < hiddenPhoneInputs.length; i++) {
+                    hiddenPhoneInputs[i].value = responsePayload.phone;
+                }
+
+            } else {
+                // If the request comes back as something other than 200, log the user our (on the assumption that the api is temporarily down or the users token is bad)
+                app.logUserOut();
+            }
+        });
+    } else {
+        app.logUserOut();
+    }
+};
+
 // Init (bootstrapping)
 app.init = function () {
     // Bind all form submissions
@@ -293,6 +347,9 @@ app.init = function () {
 
     // Renew token
     app.tokenRenewalLoop();
+
+    // Load data on page
+    app.loadDataOnPage();
 };
 
 // Call the init processes after the window loads

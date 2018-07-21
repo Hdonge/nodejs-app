@@ -147,6 +147,73 @@ handlers.sessionDeleted = function (data, callback) {
     }
 };
 
+//Edit account details 
+handlers.accountEdit = function (data, callback) {
+    //Reject any request that is not GET
+    if (data.method == 'get') {
+
+        //Prepare data interpolation 
+        var templateData = {
+            'head.title': 'Account Settings',
+            'body.class': 'accountEdit'
+        };
+
+        //Read in a template as a string
+        helpers.getTemplate('accountEdit', templateData, function (err, str) {
+            if (!err && str) {
+                //Add the universal header and footer
+                helpers.addUniversalTemplates(str, templateData, function (err, str) {
+                    if (!err && str) {
+                        //Return the page as HTML
+                        callback(200, str, 'html');
+                    } else {
+                        callback(500, undefined, 'html');
+                    }
+                });
+            } else {
+                callback(500, undefined, 'html');
+            }
+        });
+    } else {
+        callback(405, undefined, 'html');
+    }
+};
+
+//Deleted Account
+handlers.accountDeleted = function (data, callback) {
+    //Reject any request that is not GET
+    if (data.method == 'get') {
+
+        //Prepare data interpolation 
+        var templateData = {
+            'head.title': 'Account Deleted',
+            'head.description': 'Your account has been deleted',
+            'body.class': 'accountDeleted'
+        };
+
+        //Read in a template as a string
+        helpers.getTemplate('accountDeleted', templateData, function (err, str) {
+            if (!err && str) {
+                //Add the universal header and footer
+                helpers.addUniversalTemplates(str, templateData, function (err, str) {
+                    if (!err && str) {
+                        //Return the page as HTML
+                        callback(200, str, 'html');
+                    } else {
+                        callback(500, undefined, 'html');
+                    }
+                });
+            } else {
+                callback(500, undefined, 'html');
+            }
+        });
+    } else {
+        callback(405, undefined, 'html');
+    }
+};
+
+
+
 /**
  * favicon handler
  */
@@ -285,7 +352,7 @@ handlers._users.get = function (data, callback) {
     var phone = typeof (data.queryStringObject.phone) == 'string' && data.queryStringObject.phone.trim().length === 10 ? data.queryStringObject.phone : false;
     if (phone) {
         //Get the token from headers 
-        var token = typeof (data.headers.token) == 'string' && data.headers.token === 20 ? data.headers.token : false;
+        var token = typeof (data.headers.token) == 'string' && data.headers.token.length === 20 ? data.headers.token : false;
         //Verify that given token is valida for the phone number
         handlers._tokens.verifyToken(token, phone, function (isValidToken) {
             if (isValidToken) {
@@ -591,7 +658,7 @@ handlers._tokens.verifyToken = function (id, phone, callback) {
     _data.read('tokens', id, function (err, tokenData) {
         //check that the token is for the given user and has not expired
         if (!err && tokenData) {
-            if (tokenData.phone = phone && tokenData.expires > Date.now()) {
+            if (tokenData.phone == phone && tokenData.expires > Date.now()) {
                 callback(true);
             } else {
                 callback(false);
