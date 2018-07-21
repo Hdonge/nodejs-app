@@ -213,6 +213,40 @@ handlers.accountDeleted = function (data, callback) {
 };
 
 
+//Checks templates
+//Check create
+handlers.checksCreate = function (data, callback) {
+    //Reject any request that is not GET
+    if (data.method == 'get') {
+
+        //Prepare data interpolation 
+        var templateData = {
+            'head.title': 'Create Checks',
+            'head.description': 'Your checks has been created',
+            'body.class': 'checksCreate'
+        };
+
+        //Read in a template as a string
+        helpers.getTemplate('checksCreate', templateData, function (err, str) {
+            if (!err && str) {
+                //Add the universal header and footer
+                helpers.addUniversalTemplates(str, templateData, function (err, str) {
+                    if (!err && str) {
+                        //Return the page as HTML
+                        callback(200, str, 'html');
+                    } else {
+                        callback(500, undefined, 'html');
+                    }
+                });
+            } else {
+                callback(500, undefined, 'html');
+            }
+        });
+    } else {
+        callback(405, undefined, 'html');
+    }
+};
+
 
 /**
  * favicon handler
