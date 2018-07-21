@@ -384,6 +384,11 @@ handlers.ping = function (data, callback) {
     callback(200);
 };
 
+//Example Error
+handlers.exampleError = function (data, callback) {
+    var error = new Error('This is an example error');
+    throw error;
+};
 
 //Containers for user sub methods
 handlers._users = {};
