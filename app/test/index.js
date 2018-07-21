@@ -9,27 +9,11 @@ const assert = require('assert');
 var _app = {};
 
 //Container for the tests
-_app.tests = {
-    'unit': {}
-};
+_app.tests = {};
 
-_app.tests.unit['helpers.parsedJsonToObject should return parsed object when provided stringified object'] = function (done) {
-    let result = helpers.parsedJsonToObject('{"abc":"wxy"}');
-    assert.deepEqual(result, { abc: 'wxy' });
-    done();
-};
+//Add on the unit tests
+_app.tests.unit = require('./unit');
 
-_app.tests.unit['helpers.parsedJsonToObject should return empty object when provided corrupted stringified object or bad JSON'] = function (done) {
-    let result = helpers.parsedJsonToObject('{"abc":"wxy');
-    assert.deepEqual(result, {});
-    done();
-};
-
-_app.tests.unit['helpers.parsedJsonToObject should return empty object when provided undefined'] = function (done) {
-    let result = helpers.parsedJsonToObject(undefined);
-    assert.deepEqual(result, {});
-    done();
-};
 
 _app.countTests = function () {
     var counter = 0;
