@@ -6,16 +6,20 @@ const server = require('./lib/server'),
 var app = {};
 
 //Init function
-app.init = function () {
+app.init = function (callback) {
     //start the server
     server.init();
 
     //start the worker 
     workers.init();
+
+    callback();
 };
 
-
-app.init();
+//Self invoking only if required directly
+if (require.main === module) {
+    app.init(function () { });
+}
 
 //Execute the app
 module.exports = app;
