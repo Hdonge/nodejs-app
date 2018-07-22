@@ -5,7 +5,9 @@
 //Dependecies
 const _data = require('./data'),
     helpers = require('./helpers'),
-    config = require('./config');
+    config = require('./config'),
+    _url = require('url'),
+    dns = require('dns');
 
 //define the handlers
 var handlers = {};
@@ -805,38 +807,49 @@ handlers._checks.post = function (data, callback) {
                         var userChecks = typeof (userData.checks) == 'object' && userData.checks instanceof Array ? userData.checks : [];
                         //Verify that the user has less than the number of max checks per user
                         if (userChecks.length < config.maxChecks) {
-                            //Create the random id for check
-                            var checkId = helpers.createRandomString(20);
 
-                            //create the check object and include the user's phone
-                            var checkObject = {
-                                'id': checkId,
-                                'userPhone': userPhone,
-                                'protocol': protocol,
-                                'url': url,
-                                'method': method,
-                                'successCodes': successCodes,
-                                'timeoutSeconds': timeoutSeconds
-                            };
+                            //Verify that the URL given has DNS entries (and therefore can resolve)
+                            var parsedUrl = _url.parse(protocol + '://' + url, true);
+                            var hostName = typeof (parsedUrl.hostname) == 'string' && parsedUrl.hostname.length > 0 ? parsedUrl.hostname : false;
 
-                            //Save the object
-                            _data.create('checks', checkId, checkObject, function (err) {
-                                if (!err) {
-                                    //Add the check id to the user object
-                                    userData.checks = userChecks;
-                                    userData.checks.push(checkId);
+                            dns.resolve(hostName, function (err, records) {
+                                if (!err && records) {
+                                    //Create the random id for check
+                                    var checkId = helpers.createRandomString(20);
 
-                                    //Save the new user data
-                                    _data.update('users', userPhone, userData, function (err) {
+                                    //create the check object and include the user's phone
+                                    var checkObject = {
+                                        'id': checkId,
+                                        'userPhone': userPhone,
+                                        'protocol': protocol,
+                                        'url': url,
+                                        'method': method,
+                                        'successCodes': successCodes,
+                                        'timeoutSeconds': timeoutSeconds
+                                    };
+
+                                    //Save the object
+                                    _data.create('checks', checkId, checkObject, function (err) {
                                         if (!err) {
-                                            //Return the data about the new check
-                                            callback(200, checkObject);
+                                            //Add the check id to the user object
+                                            userData.checks = userChecks;
+                                            userData.checks.push(checkId);
+
+                                            //Save the new user data
+                                            _data.update('users', userPhone, userData, function (err) {
+                                                if (!err) {
+                                                    //Return the data about the new check
+                                                    callback(200, checkObject);
+                                                } else {
+                                                    callback(500, { 'Error': 'Could not update the user with new check' });
+                                                }
+                                            });
                                         } else {
-                                            callback(500, { 'Error': 'Could not update the user with new check' });
+                                            callback(500, { 'Error': 'Could not create the new check' });
                                         }
                                     });
                                 } else {
-                                    callback(500, { 'Error': 'Could not create the new check' });
+                                    callback(400, { 'Error': 'The hostname of the URL entrered did not resolve to any DNS entries' });
                                 }
                             });
                         } else {
