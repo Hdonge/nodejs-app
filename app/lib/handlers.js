@@ -8,6 +8,10 @@ const _data = require('./data'),
     config = require('./config'),
     _url = require('url'),
     dns = require('dns');
+//Todo: Need to update node version to support native performance hooks
+/* _performance = require('perf-hooks').performance,
+util = require('util'),
+debug = util.debuglog('performance') */
 
 //define the handlers
 var handlers = {};
@@ -633,15 +637,22 @@ handlers._tokens = {};
 //Required data - phone , password
 //Optional data - none
 handlers._tokens.post = function (data, callback) {
+    // _performance.mark('entered function');
     var phone = typeof (data.payload.phone) == 'string' && data.payload.phone.trim().length == 10 ? data.payload.phone.trim() : false;
     var password = typeof (data.payload.password) == 'string' && data.payload.password.trim().length > 0 ? data.payload.password.trim() : false;
+    //_performance.mark('inputs validated');
     if (phone && password) {
         //Lookup the user who matches that phone number
+        //  _performance.mark('beginning user lookup');
         _data.read('users', phone, function (err, data) {
+            //    _performance.mark('user lookup complete');
             if (!err && data) {
-                //Hash the sent password and compare it with the password stored in user's details 
+                //Hash the sent password and compare it with the password stored in user's details
+                //  _performance.mark('beginning password hashing');
                 var hashedPassword = helpers.hash(password);
+                //_performance.mark('password hashing complete');
                 if (hashedPassword === data.hashedPassword) {
+                    //  _performance.mark('creating data for token');
                     //If valid, create a new token with a random name. Set expiration date in 1 hr 
                     var tokenId = helpers.createRandomString(20);
                     var expires = Date.now() + 1000 * 60 * 60;
@@ -652,7 +663,23 @@ handlers._tokens.post = function (data, callback) {
                     };
 
                     //Store the token 
+                    // _performance.mark('beginning storing token');
                     _data.create('tokens', tokenId, tokenObject, function (err) {
+                        //   _performance.mark('storing token complete');
+
+                        // Gather all measurements
+                        /* _performance.measure('Beginning to end', 'entered function', 'storing token complete');
+                        _performance.measure('Validating user inputs', 'entered function', 'inputs validated');
+                        _performance.measure('User lookup', 'beginning user lookup', 'user lookup complete');
+                        _performance.measure('Password hashing', 'beginning password hashing', 'password hashing complete');
+                        _performance.measure('Token data creation', 'creating data for token', 'beginning storing token');
+                        _performance.measure('Token storing', 'beginning storing token', 'storing token complete'); */
+                        // Log out all the measurements
+                        /* var measurements = _performance.getEntriesByType('measure');
+                        measurements.forEach(function (measurement) {
+                            debug('\x1b[33m%s\x1b[0m', measurement.name + ' ' + measurement.duration);
+                        }); */
+
                         if (!err) {
                             callback(200, tokenObject);
                         } else {
